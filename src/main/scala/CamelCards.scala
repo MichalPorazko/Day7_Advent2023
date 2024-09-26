@@ -12,8 +12,8 @@ case class CamelCards(
 
 object CamelCards{
 
-  def addToType(hand: Hand, part1: CamelCards): CamelCards =
-    Hand.handType(hand) match
+  def addToType(hand: Hand, part1: CamelCards, function: Hand => HandType): CamelCards =
+    function(hand) match
       case FiveKind =>
         part1.copy(fiveKind = hand :: part1.fiveKind)
       case FourKind =>
@@ -39,18 +39,49 @@ object CamelCards{
     camelCards.fiveKind
   ).filter(_.nonEmpty)
 
-  def rankInList(currentRank: Int, hands: List[Hand]) =
-    val sortedHands = hands.sorted(using Hand.handOrdering)
-    println(s"The sorted hands: ${sortedHands}")
+  def filterCamelCards(camelCards: CamelCards): CamelCards =
+    /**
+   * handsInOrder(camelCards).foreach(_.foreach { hand =>
+   * if hand.cards.contains('J') then
+   * addToType(hand, camelCards, Hand.handTypeWithJ)
+   * })
+   * camelCards
+   *
+   * CamelCards is an immutable case class.
+   * When you call addToType, it returns a new instance of CamelCards with the updated hand type list.
+   * In your method,
+   * you're not capturing the returned CamelCards instance from addToType.
+   * Therefore, camelCards remains unchanged.
+   *
+   *
+   * this version is also wrong:
+     * handsInOrder(camelCards).flatten.foldLeft(CamelCards()){(cc, hand) =>
+     *  val  handTypeOperation = if (hand.cards.contains('J')) Hand.handTypeWithJ else Hand.handType
+     *  addToType(hand, camelCards, handTypeOperation)
+     * }
+     * In a foldLeft, the accumulator (cc in your case) is meant to carry forward the updated state after each iteration.
+     * However, you're not using cc when calling addToType;
+     * instead, you're using camelCards, which is the original CamelCards instance passed into the method.
+     * This means that you're not accumulating changes, and the updates are not being captured.
+     * *
+   */
+    handsInOrder(camelCards).flatten.foldLeft(CamelCards()){(cc, hand) =>
+      val  handTypeOperation = if (hand.cards.contains('J')) Hand.handTypeWithJ else Hand.handType
+      addToType(hand, cc, handTypeOperation)
+    }
+
+  def rankInList(currentRank: Int, hands: List[Hand])(using Ordering[Hand]): (Int, Int) =
+    val sortedHands = hands.sorted
+    //println(s"The sorted hands: ${sortedHands}")
     val winnings = sortedHands.zipWithIndex.map((hand, index) =>
-      println(s"Hand bid its ${hand.bid} index is ${index} current Rank is ${currentRank}")
-      println(s"The sum of ${hand.bid} * (${index} + ${currentRank}) is ${hand.bid * (index + currentRank)}")
+      //println(s"Hand bid its ${hand.bid} index is ${index} current Rank is ${currentRank}")
+      //println(s"The sum of ${hand.bid} * (${index} + ${currentRank}) is ${hand.bid * (index + currentRank)}")
       hand.bid * (index + currentRank)
     ).sum
     val newRank = currentRank + hands.length
     (winnings, newRank)
 
-  def rankAllHands(camelCards: CamelCards): Int =
+  def rankAllHands(camelCards: CamelCards)(using Ordering[Hand]): Int =
     val handsByType = handsInOrder(camelCards)
     /**
      * First Element:
@@ -69,6 +100,7 @@ object CamelCards{
      * is that is used as a returned value in the method
      * { case ((accumulatedHands: List[(Hand, Int)], currentRank), handsOfType) =>
      * */
+    //println(s"The hands by type are $handsByType")
     val (totalWinnings, _) = handsByType.foldLeft[(Int, Int)](0,1) {
       /**
        * case word is needed because teh accumulator is a tuple, so you need to tell the compiler that you
@@ -82,11 +114,8 @@ object CamelCards{
        * */
       case ((winnings, currentRank), hands) =>
         val (updatedWinnings, newRank) = rankInList(currentRank, hands)
-        println(s"The updated winnings are ${updatedWinnings} and the new rank is ${newRank}")
+        //println(s"The updated winnings are ${updatedWinnings} and the new rank is ${newRank}")
         (winnings + updatedWinnings, newRank)
     }
     totalWinnings
-
-  def
-
 }

@@ -9,7 +9,7 @@ object ReadingFile {
     val bid = parts(1).toInt
     Hand(cards, bid)
 
-  def readFile(fileName: String, camelCards: CamelCards) =
+  def readFile(fileName: String, camelCards: CamelCards): CamelCards =
     Using(Source.fromFile(fileName)) { source =>
       /**
        * Here's the problematic line:
@@ -21,7 +21,7 @@ object ReadingFile {
        * The camelCards instance passed into addToType remains unchanged throughout the mapping.
        * */
       source.getLines().foldLeft(camelCards){ (cards, string) =>
-        CamelCards.addToType(toHand(string), cards)
+        CamelCards.addToType(toHand(string), cards, Hand.handType)
       }
     }.getOrElse(sys.error("Cannot open input file."))
 

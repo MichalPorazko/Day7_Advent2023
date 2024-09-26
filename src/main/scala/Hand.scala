@@ -2,7 +2,7 @@ case class Hand(cards: String, bid: Int)
 
 object Hand{
 
-  private val digitStrength: Map[Char, Int] = Map(
+  private val digitStrengthPart1: Map[Char, Int] = Map(
     'A' -> 13,
     'K' -> 12,
     'Q' -> 11,
@@ -17,9 +17,24 @@ object Hand{
     '3' -> 2,
     '2' -> 1,
   )
+  private val digitStrengthPart2: Map[Char, Int] = Map(
+    'A' -> 13,
+    'K' -> 12,
+    'Q' -> 11,
+    'T' -> 10,
+    '9' -> 9,
+    '8' -> 8,
+    '7' -> 7,
+    '6' -> 6,
+    '5' -> 5,
+    '4' -> 4,
+    '3' -> 3,
+    '2' -> 2,
+    'J' -> 1
+  )
 
-  def pairs(hand: Hand) =
-    hand.cards.groupBy(identity).map((c, s) => (c, s.length)).values.toList.sorted.reverse
+  def charsCount(hand: Hand): Map[Char, Int] =
+    hand.cards.groupBy(identity).map((c, s) => (c, s.length))
 
   private def defineType(list: List[Int]): HandType =
     //why is that that the 'list' in the cases is not recognised as the list parameter passed in the argument of the method?
@@ -34,11 +49,33 @@ object Hand{
       case _ => HandType.HighCard
 
   def handType(hand: Hand): HandType =
-    defineType(pairs(hand))
+    defineType(charsCount(hand).values.toList.sorted.reverse)
 
-  private def compareLetter(letter1: Char, letter2: Char) =
-    -digitStrength(letter1).compare(digitStrength(letter2))
+  def handTypeWithJ(hand: Hand): HandType =
+    val pairs = charsCount(hand)
+    val countJ = pairs.getOrElse('J', 0)
+    val sortedList = (pairs - 'J').toList.sortBy((_, int) => -int).map((_, int) => int)
+    (countJ, sortedList) match
+      case (5, _) => HandType.FiveKind
+      case (4, _) => HandType.FiveKind
+      case (3, 2 :: _) => HandType.FiveKind
+      case (3, 1 :: _) => HandType.FourKind
+      case (2, 3 :: _) => HandType.FiveKind
+      case (2, 2 :: _) => HandType.FourKind
+      case (2, 1 :: _) => HandType.ThreeKind
+      case (1, 4 :: _) => HandType.FiveKind
+      case (1, 3 :: _) => HandType.FourKind
+      case (1, 2 :: 2 :: _) => HandType.FullHouse
+      case (1, 2 :: 1 :: _) => HandType.ThreeKind
+      case _ => HandType.OnePair
 
+  type CompareLetter = (Char, Char) => Int
+
+  val compareLetter: CompareLetter = (letter1: Char, letter2: Char) =>
+    -digitStrengthPart1(letter1).compare(digitStrengthPart1(letter2))
+
+  val compareLetterJ: CompareLetter = (letter1: Char, letter2: Char) =>
+    -digitStrengthPart2(letter1).compare(digitStrengthPart2(letter2))
 
   /**
    val pairs = cards1 zip cards2
@@ -54,8 +91,7 @@ object Hand{
    When you use return inside the for loop, the function exits on the first iteration.
    * */
 
-
-  given handOrdering: Ordering[Hand] = new Ordering[Hand] {
+  given handOrdering(using compareLetter: CompareLetter): Ordering[Hand] = new Ordering[Hand] {
     override def compare(a: Hand, b: Hand): Int =
       val pairs = a.cards zip b.cards
       for((char1, char2) <- pairs){

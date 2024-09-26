@@ -32,7 +32,7 @@ class HandTest extends munit.FunSuite {
   test("the handType recognising method"){
 
     val hand1 = Hand("KTJJT", 220)
-    val pairsHand1 = Hand.pairs(hand1)
+    val pairsHand1 = Hand.charsCount(hand1)
     println(s"The pairs method on the hand 1: ${pairsHand1}")
 
 
@@ -99,9 +99,38 @@ class HandTest extends munit.FunSuite {
     println(zip)
 
     println(hand1.cards.compare(hand2.cards))
+    import Hand._
+    implicit val ordering: CompareLetter = Hand.compareLetter
     println(hands.sorted(using Hand.handOrdering))
 
   }
 
+  test("testing the handType method with J"){
+
+    val handsWIthJ = List(
+      Hand("JJJJJ", 765),
+      Hand("JJJJA", 684),
+      Hand("JJJ22", 28),
+      Hand("AJJJK", 220),
+      Hand("AJAJA", 483),
+      Hand("QJ2JQ", 657),
+      Hand("J8AJ6", 527),
+      Hand("JAAAA", 424),
+      Hand("JQQQ6", 352),
+      Hand("J55QQ", 513),
+      Hand("JAA23", 547),
+      Hand("J4567", 993),
+      Hand("324KJ", 12),
+      Hand("J54AQ", 200)
+    )
+
+    handsWIthJ.foreach(hand =>
+      println(s"The hand ${hand.cards}, it's old type was ${Hand.handType(hand)} and the new type is ${Hand.handTypeWithJ(hand)} ")
+    )
+
+    val hand = Hand("QJ2JQ", 657)
+    println(Hand.handTypeWithJ(hand))
+
+  }
 
 }
