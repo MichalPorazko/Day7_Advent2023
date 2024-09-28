@@ -1,5 +1,3 @@
-package exampleSolution
-
 
 class ExampleSolution extends munit.FunSuite {
 
