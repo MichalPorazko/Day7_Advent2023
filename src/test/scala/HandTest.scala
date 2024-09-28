@@ -132,5 +132,9 @@ class HandTest extends munit.FunSuite {
     println(Hand.handTypeWithJ(hand))
 
   }
+  
+  test("Ordinal Test"){
+    println(HandType.FiveKind.ordinal - HandType.HighCard.ordinal)
+  }
 
 }

@@ -37,7 +37,8 @@ object Hand{
     -digitStrengthPart2(letter1).compare(digitStrengthPart2(letter2))
 
   given handOrdering(using compareLetter: CompareLetter, defineTypeOperation: DefineType): Ordering[Hand] =
-    (hand1: Hand, hand2: Hand) =>
+    (hand1: Hand, hand2: Hand) => ???
+
 
 
 
