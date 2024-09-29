@@ -1,3 +1,5 @@
+import Hand.charsCount
+
 class HandTest extends munit.FunSuite {
 
   test("testing the groupBy method "){
@@ -101,6 +103,7 @@ class HandTest extends munit.FunSuite {
     println(hand1.cards.compare(hand2.cards))
     import Hand._
     implicit val ordering: CompareLetter = Hand.compareLetter
+    implicit val defineTypeOperation: Hand => HandType = Hand.handType
     println(hands.sorted(using Hand.handOrdering))
 
   }
@@ -135,6 +138,24 @@ class HandTest extends munit.FunSuite {
   
   test("Ordinal Test"){
     println(HandType.FiveKind.ordinal - HandType.HighCard.ordinal)
+  }
+
+  test("testing the handTypeWithJ"){
+    val hands = List(
+      Hand("32T3K", 765),
+      Hand("T55J5", 684),
+      Hand("KK677", 28),
+      Hand("KTJJT", 220),
+      Hand("QQQJA", 483)
+    )
+    hands.foreach(hand =>
+      println(hand)
+      val pairs = charsCount(hand)
+      val countJ = pairs.getOrElse('J', 0)
+      println(countJ)
+      val sortedList = (pairs - 'J').toList.sortBy((_, int) => -int).map((_, int) => int)
+      println(sortedList)
+      println(countJ + sortedList.head) :: sortedList.tail)
   }
 
 }

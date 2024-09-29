@@ -9,19 +9,10 @@ object ReadingFile {
     val bid = parts(1).toInt
     Hand(cards, bid)
 
-  def readFile(fileName: String, camelCards: CamelCards): CamelCards =
+  def readFile(fileName: String): List[Hand] =
     Using(Source.fromFile(fileName)) { source =>
-      /**
-       * Here's the problematic line:
-       *
-       * val cards = source.getLines().map(toHand).map(CamelCards.addToType(_, camelCards))
-       * In this line:
-       *
-       * CamelCards.addToType(_, camelCards) returns a new CamelCards instance for each hand, but you're not updating camelCards with these new instances.
-       * The camelCards instance passed into addToType remains unchanged throughout the mapping.
-       * */
-      source.getLines().foldLeft(camelCards){ (cards, string) =>
-        CamelCards.addToType(toHand(string), cards, Hand.handType)
+      source.getLines().foldLeft(List[Hand]().empty) { (list, string) =>
+        toHand(string) :: list
       }
     }.getOrElse(sys.error("Cannot open input file."))
 

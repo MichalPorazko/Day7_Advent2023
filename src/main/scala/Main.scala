@@ -1,19 +1,21 @@
 object Main extends App{
 
-//  import Hand._
-//  val emptyCamelCards = CamelCards()
-//  val camelCards = ReadingFile.readFile("file", emptyCamelCards)
-//
-//  {
-//    implicit val part1Ordering: CompareLetter = Hand.compareLetter
-//    println(s"The whole sum for part one is ${CamelCards.rankAllHands(camelCards)}")
-//  }
-//
-//  {
-//    implicit val part2Ordering: CompareLetter = Hand.compareLetterJ
-//    val sortedCamelCardsWithJ = CamelCards.filterCamelCards(camelCards)
-//    println(s"The whole sum for part two is ${CamelCards.rankAllHands(sortedCamelCardsWithJ)}")
-//  }
+  import Hand._
+  val camelCards = ReadingFile.readFile("file")
+
+  {
+    implicit val part1Ordering: CompareLetter = Hand.compareLetter
+    implicit val defineTypeOperation: Hand => HandType = Hand.handType
+    val part1 = Hand.calculateWinnings(camelCards)
+    println(s"The whole sum for part two is ${part1}")
+  }
+
+  {
+    implicit val part2Ordering: CompareLetter = Hand.compareLetterJ
+    implicit val defineTypeOperation: Hand => HandType = Hand.handTypeWithJ
+    val part2 = Hand.calculateWinnings(camelCards)
+    println(s"The whole sum for part two is ${part2}")
+  }
 
 
 
