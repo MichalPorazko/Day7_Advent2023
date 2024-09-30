@@ -1,66 +1,136 @@
-type Card = Char
-type Hand = String
+import zio.System.os
 
-case class Bet(hand: Hand, bid: Int)
-object Bet:
-  def apply(s: String): Bet = Bet(s.take(5), s.drop(6).toInt)
+import math.Ordering.Implicits.* // gives us <, >, == on Ordering[T]s
 
-enum HandType:
-  case HighCard, OnePair, TwoPair, ThreeOfAKind, FullHouse, FourOfAKind, FiveOfAKind
-object HandType:
-  def apply(hand: Hand)(using rules: Rules): HandType =
-    val cardCounts: Map[Card, Int] =
-      hand.groupBy(identity).mapValues(_.length).toMap
+object DataDefs:
+  enum Card:
+    case Num(n: Int)
+    case Ten
+    case Jack
+    case Queen
+    case King
+    case Ace
+    lazy val value: Int = this match // part 1
+      case Ace    => 14
+      case King   => 13
+      case Queen  => 12
+      case Jack   => 11
+      case Ten    => 10
+      case Num(n) => n
+    lazy val jokerValue: Int = this match // part 2
+      case Ace    => 14
+      case King   => 13
+      case Queen  => 12
+      case Ten    => 10
+      case Num(n) => n
+      case Jack   => 1
 
-    val cardGroups: List[Int] = rules.wildcard match
-      case Some(card) if cardCounts.keySet.contains(card) =>
-        val wildcardCount = cardCounts(card)
-        val cardGroupsNoWildcard = cardCounts.removed(card).values.toList.sorted.reverse
-        cardGroupsNoWildcard match
-          case Nil => List(wildcardCount)
-          case _ => cardGroupsNoWildcard.head + wildcardCount :: cardGroupsNoWildcard.tail
-      case _ => cardCounts.values.toList.sorted.reverse
+  import Card.*
+  given Ordering[Card] with // part 1
+    def compare(x: Card, y: Card): Int = x.value - y.value
 
-    cardGroups match
-      case 5 :: _ => HandType.FiveOfAKind
-      case 4 :: _ => HandType.FourOfAKind
-      case 3 :: 2 :: Nil => HandType.FullHouse
-      case 3 :: _ => HandType.ThreeOfAKind
-      case 2 :: 2 :: _ => HandType.TwoPair
-      case 2 :: _ => HandType.OnePair
-      case _ => HandType.HighCard
-  end apply
-end HandType
+  enum Rank:
+    case HighCard, OnePair, TwoPairs, ThreeOfAKind, FullHouse, FourOfAKind, FiveOfAKind
+  import Rank.*
+  given Ordering[Rank] with // part 1
+    def compare(x: Rank, y: Rank): Int = x.ordinal compare y.ordinal
 
-trait Rules:
-  val rankValues: String
-  val wildcard: Option[Card]
+  case class Hand(cards: Seq[Card]):
+    lazy val partition = cards
+      .groupMapReduce(identity)(_ => 1)(_ + _)
+      .values
+      .toList
+      .sorted
+    lazy val rank: Rank = partition match
+      case List(5)          => FiveOfAKind
+      case List(1, 4)       => FourOfAKind
+      case List(2, 3)       => FullHouse
+      case List(1, 1, 3)    => ThreeOfAKind
+      case List(1, 2, 2)    => TwoPairs
+      case List(1, 1, 1, 2) => OnePair
+      case _                => HighCard
 
-val standardRules = new Rules:
-  val rankValues = "23456789TJQKA"
-  val wildcard = None
+    lazy val isAllJokers = cards.forall(_ == Jack)
+    lazy val indexedCards = cards.zipWithIndex
+    lazy val (jokers, others) = indexedCards.partition((card, _) => card == Jack)
+    lazy val nonJokers = others.map(_._1).distinct
+    lazy val substitutes =
+      for nonJoker <- nonJokers
+        yield jokers.map((_, index) => (nonJoker, index))
+    lazy val subbedHands = // replace all Jokers with the same card.
+      for sub <- substitutes
+        yield Hand((others ++ sub).sortBy(_._2).map(_._1))
+    lazy val jokerRank: Rank =
+      if isAllJokers then FiveOfAKind else subbedHands.maxBy(_.rank).rank
 
-val jokerRules = new Rules:
-  val rankValues = "J23456789TQKA"
-  val wildcard = Some('J')
+  given Ordering[Hand] with // part 1
+    def compare(x: Hand, y: Hand): Int =
+      Ordering[Rank].compare(x.rank, y.rank) match
+        case 0 => Ordering[Seq[Card]].compare(x.cards, y.cards)
+        case n => n
 
+  case class Bid(hand: Hand, bid: Int)
+  given Ordering[Bid] with // part 1
+    def compare(x: Bid, y: Bid): Int = Ordering[Hand].compare(x.hand, y.hand)
 
-given cardOrdering(using rules: Rules): Ordering[Card] = Ordering.by(rules.rankValues.indexOf(_))
-given handOrdering(using Rules): Ordering[Hand] = (h1: Hand, h2: Hand) =>
-  val h1Type = HandType(h1)
-  val h2Type = HandType(h2)
-  if h1Type != h2Type then h1Type.ordinal - h2Type.ordinal
-  else h1.zip(h2).find(_ != _).map( (c1, c2) => cardOrdering.compare(c1, c2) ).getOrElse(0)
-given betOrdering(using Rules): Ordering[Bet] = Ordering.by(_.hand)
+  object Joker: // part 2: to deal with given import priority order.
+    given Ordering[Card] with
+      def compare(x: Card, y: Card): Int = x.jokerValue - y.jokerValue
 
-def calculateWinnings(bets: List[Bet])(using Rules): Int =
-  bets.sorted.zipWithIndex.map { case (bet, index) => bet.bid * (index + 1) }.sum
+    given Ordering[Hand] with
+      def compare(x: Hand, y: Hand): Int =
+        Ordering[Rank].compare(x.jokerRank, y.jokerRank) match
+          case 0 => Ordering[Seq[Card]].compare(x.cards, y.cards)
+          case n => n
 
-def parse(input: String): List[Bet] =
-  input.linesIterator.toList.map(Bet(_))
+    given Ordering[Bid] with
+      def compare(x: Bid, y: Bid): Int = Ordering[Hand].compare(x.hand, y.hand)
 
-def part1(input: String): Unit =
-  println(calculateWinnings(parse(input))(using standardRules))
+object Parsing:
+  import DataDefs.*, Card.*
+  extension (char: Char)
+    def toCard: Card = char match
+      case 'A' => Ace
+      case 'K' => King
+      case 'Q' => Queen
+      case 'J' => Jack
+      case 'T' => Ten
+      case n   => Num(n.asDigit)
 
-def part2(input: String): Unit =
-  println(calculateWinnings(parse(input))(using jokerRules))
+  def parseHand(hand: String): Hand = Hand(hand.map(_.toCard))
+  def lineToBid(line: String): Bid = line match
+    case s"$hand $bid" => Bid(parseHand(hand), bid.toInt)
+
+object Solving:
+  import DataDefs.*
+  def solve(lines: Seq[String])(using Ordering[Bid]): Long = lines
+    .map(Parsing.lineToBid)
+    .sorted // this is where the magic happens!
+    .zipWithIndex
+    .map((bid, index) => bid.bid * (index + 1))
+    .sum
+
+object Testing:
+  val testInput = """
+                    |32T3K 765
+                    |T55J5 684
+                    |KK677 28
+                    |KTJJT 220
+                    |QQQJA 483""".stripMargin.split("\n").filter(_.nonEmpty).toSeq
+  object Part1:
+    val testResult = Solving.solve(testInput)
+  object Part2:
+    import DataDefs.Joker.given // get more specific givens!
+    val testResult = Solving.solve(testInput)
+Testing.Part1.testResult // part 1: 6440
+Testing.Part2.testResult // part 2: 5905
+
+object Main:
+  val lines: Seq[String] = os.read.lines(os.pwd / "07.input.txt")
+  object Part1:
+    val result = Solving.solve(lines)
+  object Part2:
+    import DataDefs.Joker.given // get more specific givens!
+    val result = Solving.solve(lines)
+Main.Part1.result // part 1: 246795406
+Main.Part2.result // part 2: 249356515
