@@ -1,5 +1,3 @@
-import zio.System.os
-
 import math.Ordering.Implicits.* // gives us <, >, == on Ordering[T]s
 
 object DataDefs:
@@ -26,6 +24,13 @@ object DataDefs:
       case Jack   => 1
 
   import Card.*
+  /**
+   * without this 
+   * import Card.*
+   * you will have a problem with using the Card name
+   * just by it's name without the Card addition so
+   * Card.Jack
+   * */
   given Ordering[Card] with // part 1
     def compare(x: Card, y: Card): Int = x.value - y.value
 
@@ -122,15 +127,19 @@ object Testing:
   object Part2:
     import DataDefs.Joker.given // get more specific givens!
     val testResult = Solving.solve(testInput)
-Testing.Part1.testResult // part 1: 6440
-Testing.Part2.testResult // part 2: 5905
+
+//Testing.Part1.testResult // part 1: 6440
+//Testing.Part2.testResult // part 2: 5905
 
 object Main:
-  val lines: Seq[String] = os.read.lines(os.pwd / "07.input.txt")
+  val lines: Seq[String] = os.read.lines(os.pwd / "file")
   object Part1:
     val result = Solving.solve(lines)
   object Part2:
     import DataDefs.Joker.given // get more specific givens!
     val result = Solving.solve(lines)
-Main.Part1.result // part 1: 246795406
-Main.Part2.result // part 2: 249356515
+
+@main
+def main =
+  println(Main.Part1.result) // part 1: 246795406
+  println(Main.Part2.result) // part 2: 249356515

@@ -7,8 +7,7 @@ lazy val root = (project in file("."))
     name := "Day7_Advent2023"
   )
 
-libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M11" % Test
-libraryDependencies += "dev.zio" %% "zio" % "2.0.22" // Check for the latest version
-libraryDependencies += "org.typelevel" %% "cats-core" % "2.10.0" // Check for the latest version
+libraryDependencies += "org.scalameta" %% "munit" % "1.0.1" % Test
+libraryDependencies += "com.lihaoyi" %% "os-lib" % "0.10.7"
 
 
