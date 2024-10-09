@@ -32,10 +32,10 @@ object Hand{
   type CompareLetter = (Char, Char) => Int
   type DefineType = Hand => HandType
 
-  val compareLetter: CompareLetter = (letter1: Char, letter2: Char) =>
+  lazy val compareLetter: CompareLetter = (letter1: Char, letter2: Char) =>
     -digitStrengthPart1.indexOf(letter1).compare(digitStrengthPart1.indexOf(letter2))
 
-  val compareLetterJ: CompareLetter = (letter1: Char, letter2: Char) =>
+  lazy val compareLetterJ: CompareLetter = (letter1: Char, letter2: Char) =>
     -digitStrengthPart2.indexOf(letter1).compare(digitStrengthPart2.indexOf(letter2))
 
   given handOrdering(using compareLetter: CompareLetter, defineTypeOperation: DefineType): Ordering[Hand] =
