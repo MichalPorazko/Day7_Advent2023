@@ -1,7 +1,4 @@
 
-
-
-
    def partOne(input: Seq[String]): Int =
     input.map(parseInput(1, _)).sorted.zipWithIndex.map((hand, idx) => hand.bid * (idx + 1)).sum
 
@@ -27,24 +24,24 @@
   lazy val determineTypePartOne: Map[Int, Int] => HandType = map =>
     val counts = map.values.toSeq
     if counts contains 5 then HandType.FiveOfAKind
-    else if counts contains 4 then FourOfAKind
-    else if (counts contains 2) && (counts contains 3) then FullHouse
-    else if counts contains 3 then ThreeOfAKind
-    else if counts.count(_ == 2) == 2 then TwoPairs
-    else if counts contains 2 then OnePair
-    else if !counts.exists(_ != 1) then HighCard
+    else if counts contains 4 then HandType.FourOfAKind
+    else if (counts contains 2) && (counts contains 3) then HandType.FullHouse
+    else if counts contains 3 then HandType.ThreeOfAKind
+    else if counts.count(_ == 2) == 2 then HandType.TwoPairs
+    else if counts contains 2 then HandType.OnePair
+    else if !counts.exists(_ != 1) then HandType.HighCard
     else throw new IllegalArgumentException("Could not determine hand type")
 
   lazy val determineTypePartTwo: Map[Int, Int] => HandType = counts =>
     val jokers = counts.getOrElse(0, 0)
     determineTypePartOne(counts) match
-      case FiveOfAKind  => FiveOfAKind
-      case FourOfAKind  => if jokers >= 1 then FiveOfAKind else FourOfAKind
-      case FullHouse    => if jokers != 0 then FiveOfAKind else FullHouse
-      case ThreeOfAKind => if jokers != 0 then FourOfAKind else ThreeOfAKind
-      case TwoPairs     => if jokers == 0 then TwoPairs else if jokers == 1 then FullHouse else FourOfAKind
-      case OnePair      => if jokers == 0 then OnePair else ThreeOfAKind
-      case HighCard     => if jokers > 0 then OnePair else HighCard
+      case HandType.FiveOfAKind  => HandType.FiveOfAKind
+      case HandType.FourOfAKind  => if jokers >= 1 then HandType.FiveOfAKind else HandType.FourOfAKind
+      case HandType.FullHouse    => if jokers != 0 then HandType.FiveOfAKind else HandType.FullHouse
+      case HandType.ThreeOfAKind => if jokers != 0 then HandType.FourOfAKind else HandType.ThreeOfAKind
+      case HandType.TwoPairs     => if jokers == 0 then HandType.TwoPairs else if jokers == 1 then HandType.FullHouse else HandType.FourOfAKind
+      case HandType.OnePair      => if jokers == 0 then HandType.OnePair else HandType.ThreeOfAKind
+      case HandType.HighCard     => if jokers > 0 then HandType.OnePair else HandType.HighCard
 
   lazy val countCards: Seq[Int] => Map[Int, Int] = _.foldLeft(Map.empty[Int, Int]):
     case (counts, card) => counts.updatedWith(card)(value => Some(value.getOrElse(0) + 1))
