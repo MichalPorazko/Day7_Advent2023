@@ -58,11 +58,18 @@ object DataDefs:
     lazy val isAllJokers = cards.forall(_ == Jack)
     lazy val indexedCards = cards.zipWithIndex
     lazy val (jokers, others) = indexedCards.partition((card, _) => card == Jack)
+    //distinct -> Selects all the elements of this sequence ignoring the duplicates.
     lazy val nonJokers = others.map(_._1).distinct
-    lazy val substitutes =
+
+    /**
+     * there is nothing bad that the substitutes are a Seq[Seq[(Card, Int)]] because a Hand is a Seq[Hands]
+     * so for example a Seq[Hands] is a Seq[Seq[Card]]
+     * */
+
+    lazy val substitutes: Seq[Seq[(Card, Int)]] =
       for nonJoker <- nonJokers
         yield jokers.map((_, index) => (nonJoker, index))
-    lazy val subbedHands = // replace all Jokers with the same card.
+    lazy val subbedHands: Seq[Hand] = // replace all Jokers with the same card.
       for sub <- substitutes
         yield Hand((others ++ sub).sortBy(_._2).map(_._1))
     lazy val jokerRank: Rank =

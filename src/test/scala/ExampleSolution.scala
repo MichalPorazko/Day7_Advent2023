@@ -1,4 +1,5 @@
-import DataDefs.Card
+import DataDefs.Rank.FiveOfAKind
+import DataDefs.{Card, Hand, Rank}
 
 class ExampleSolution extends munit.FunSuite {
 
@@ -39,6 +40,39 @@ class ExampleSolution extends munit.FunSuite {
       case (student, (total, count)) => (student, total / count)
     }
     println(averagesByStudent)
+
+
+  }
+
+  test("testing the partition value") {
+
+    val cards1 = Seq(Card.King, Card.King, Card.Num(6), Card.Jack, Card.Ace)
+    val cards2 = Seq(Card.Queen, Card.King, Card.Queen, Card.Queen, Card.Ace)
+    val cards3 = Seq(Card.King, Card.King, Card.Num(6), Card.King, Card.King)
+
+    val indexedCards = cards1.zipWithIndex
+    println(indexedCards)
+
+    val (jokers, others) = indexedCards.partition((card, _) => card == Card.Jack)
+    println(s"jokers: $jokers")
+    println(others)
+    val nonJokers = others.map((card, int) => card).distinct
+    println(nonJokers)
+    val substitutes =
+      for nonJoker <- nonJokers
+        yield jokers.map((cars, index) => (nonJoker, index))
+    println(s"substitutes: $substitutes")
+
+    val subbedHands = // replace all Jokers with the same card.
+      for sub <- substitutes
+        yield Hand((others ++ sub).sortBy((card, index) => index).map((card, index) => card))
+    println(s"subbedHands: \n${subbedHands}")
+
+    lazy val isAllJokers = cards1.forall(_ == Card.Jack)
+    val jokerRank: Rank =
+      //maxBy -> Finds the first element which yields the largest value measured by function f
+      if isAllJokers then FiveOfAKind else subbedHands.maxBy(hand => hand.rank).rank
+    println(s"Joker Rank: ${jokerRank}")
 
 
   }
